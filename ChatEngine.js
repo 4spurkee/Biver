@@ -1,5 +1,10 @@
-const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co/rest/v1/';
+const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.com';
 const SUPABASE_KEY = 'sb_publishable_5_E6pdq5U5M_-ai_4DQ_3Q_TKnVYY-2';
+const TABLE_NAME = 'Biver'
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /**
@@ -71,7 +76,7 @@ window.ChatEngine = {
     },
 
     init: async function() {
-        const { data, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: false }).limit(10);
+        const { data, error } = await supabaseClient.from(TABLE_NAME).select('*').order('created_at', { ascending: false }).limit(10);
         if (!error && data) {
             data.reverse().forEach(msg => this._processAndEmit(msg));
             if (data.length >= 10) {
@@ -80,14 +85,14 @@ window.ChatEngine = {
         }
 
         supabaseClient
-            .channel('public:messages')
+            .channel('public:'+TABLE_NAME)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
                 this._processAndEmit(payload.new);
             }).subscribe();
     },
 
     loadFullHistory: async function() {
-        const { data, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
+        const { data, error } = await supabaseClient.from(TABLE_NAME).select('*').order('created_at', { ascending: true });
         if (!error) {
             this._renderedIds.clear(); 
             this._optimisticEcho.clear();
@@ -109,7 +114,7 @@ window.ChatEngine = {
             created_at: new Date().toISOString()
         });
 
-        const { error } = await supabaseClient.from('messages').insert([{ username, content }]);
+        const { error } = await supabaseClient.from(TABLE_NAME).insert([{ username, content }]);
         if (error) console.error('Помилка Supabase:', error);
     }
 };
