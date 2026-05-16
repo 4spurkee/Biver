@@ -1,11 +1,10 @@
-const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.com';
+const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_5_E6pdq5U5M_-ai_4DQ_3Q_TKnVYY-2';
 const TABLE_NAME = 'Biver'
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /**
  * @typedef {Object} ChatMessage
