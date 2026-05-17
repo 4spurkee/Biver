@@ -1,67 +1,135 @@
-const chatContainer = document.getElementById('chat-container');
-const chatForm = document.getElementById('chat-form');
-const messageInput = document.getElementById('message');
-const usernameInput = document.getElementById('username');
+const chatContainer =
+    document.getElementById('chat-container');
 
-// 1. Restore nickname from localStorage
-const savedName = localStorage.getItem('chat_nickname');
+const chatForm =
+    document.getElementById('chat-form');
 
-if (savedName) {
-    usernameInput.value = savedName;
-}
+const messageInput =
+    document.getElementById('message');
 
-usernameInput.addEventListener('input', () => {
-    localStorage.setItem('chat_nickname', usernameInput.value);
+const emailInput =
+    document.getElementById('email');
+
+const passwordInput =
+    document.getElementById('password');
+
+const loginBtn =
+    document.getElementById('login-btn');
+
+const signupBtn =
+    document.getElementById('signup-btn');
+
+const logoutBtn =
+    document.getElementById('logout-btn');
+
+loginBtn.addEventListener('click', async () => {
+
+    const { error } =
+        await supabaseClient.auth
+            .signInWithPassword({
+
+                email: emailInput.value,
+
+                password: passwordInput.value
+            });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    location.reload();
 });
 
-// 2. Clear screen before rendering full history
+signupBtn.addEventListener('click', async () => {
+
+    const username =
+        prompt('Choose username:');
+
+    if (!username) return;
+
+    const { data, error } =
+        await supabaseClient.auth
+            .signUp({
+
+                email: emailInput.value,
+
+                password: passwordInput.value
+            });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    const user = data.user;
+
+    if (user) {
+
+        await supabaseClient
+            .from('profiles')
+            .insert([{
+
+                id: user.id,
+
+                username: username
+            }]);
+    }
+
+    alert('Account created!');
+});
+
+logoutBtn.addEventListener('click', async () => {
+
+    await supabaseClient.auth.signOut();
+
+    location.reload();
+});
+
 ChatEngine.onClearChat = function() {
+
     chatContainer.innerHTML = '';
 };
 
-// 3. Display message
-ChatEngine.onNewMessage = function(msg, prepend = false) {
+ChatEngine.onNewMessage = function(msg) {
 
-    const p = document.createElement('p');
+    const p = document.createElement('div');
+
+    p.className = 'message';
 
     p.innerHTML = `
         [<small>${msg.date} ${msg.time}</small>]
         <b>${msg.username}:</b>
+
         <span style="word-break: break-word;">
             ${msg.text}
         </span>
     `;
 
-    if (prepend) {
+    chatContainer.appendChild(p);
 
-        // If history is loading, the engine itself adds the banner,
-        // so history elements are simply inserted at the beginning.
-        chatContainer.prepend(p);
-
-    } else {
-
-        // New live messages are added to the bottom
-        chatContainer.appendChild(p);
-
-        window.scrollTo(0, document.body.scrollHeight);
-    }
+    window.scrollTo(
+        0,
+        document.body.scrollHeight
+    );
 };
 
-// 4. Handle submit event
-chatForm.addEventListener('submit', function(event) {
+chatForm.addEventListener(
+    'submit',
 
-    event.preventDefault();
+    async function(event) {
 
-    const user = usernameInput.value.trim() || 'Anonymous';
-    const text = messageInput.value.trim();
+        event.preventDefault();
 
-    if (text !== '') {
+        const text =
+            messageInput.value.trim();
 
-        ChatEngine.send(user, text);
+        if (!text) return;
+
+        await ChatEngine.send(text);
 
         messageInput.value = '';
     }
-});
+);
 
-// Start system
 ChatEngine.init();
