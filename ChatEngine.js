@@ -66,7 +66,7 @@ window.ChatEngine = {
 
             id: rawMsg.id,
 
-            username: rawMsg.profiles?.username || 'Unknown',
+            username: rawMsg.username || 'Unknown',
 
             text: DOMPurify.sanitize(rawMsg.content, {
                 ALLOWED_TAGS: [
@@ -95,10 +95,7 @@ window.ChatEngine = {
 
         const { data } = await supabaseClient
             .from(TABLE_NAME)
-            .select(`
-                *,
-                profiles(username)
-            `)
+            .select('*')
             .order('created_at', { ascending: false })
             .limit(10);
 
