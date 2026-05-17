@@ -65,8 +65,8 @@
         #auth-box {
             display: flex;
             gap: 8px;
-            align-items: center;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         #auth-box input,
@@ -178,12 +178,17 @@
         </div>
 
         <div id="auth-box">
+
             <input type="email" id="email" placeholder="email">
+
             <input type="password" id="password" placeholder="password">
 
             <button id="login-btn">Login</button>
+
             <button id="signup-btn">Sign up</button>
+
             <button id="logout-btn">Logout</button>
+
         </div>
 
     </div>
@@ -204,302 +209,9 @@
 
     </form>
 
-    <script>
-
-        const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-        const SUPABASE_KEY = 'YOUR_PUBLIC_KEY';
-        const TABLE_NAME = 'messages';
-
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        const chatContainer = document.getElementById('chat-container');
-        const chatForm = document.getElementById('chat-form');
-        const messageInput = document.getElementById('message');
-
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-
-        const loginBtn = document.getElementById('login-btn');
-        const signupBtn = document.getElementById('signup-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-
-        async function getProfileUsername(userId) {
-
-            const { data } = await supabaseClient
-                .from('profiles')
-                .select('username')
-                .eq('id', userId)
-                .single();
-
-            return data?.username || 'Unknown';
-        }
-
-        loginBtn.addEventListener('click', async () => {
-
-            const { error } = await supabaseClient.auth.signInWithPassword({
-                email: emailInput.value,
-                password: passwordInput.value
-            });
-
-            if (error) {
-                alert(error.message);
-                return;
-            }
-
-            location.reload();
-        });
-
-        signupBtn.addEventListener('click', async () => {
-
-            const username = prompt('Choose username:');
-
-            if (!username) return;
-
-            const { data, error } = await supabaseClient.auth.signUp({
-                email: emailInput.value,
-                password: passwordInput.value
-            });
-
-            if (error) {
-                alert(error.message);
-                return;
-            }
-
-            const user = data.user;
-
-            if (user) {
-
-                await supabaseClient
-                    .from('profiles')
-                    .insert([{
-                        id: user.id,
-                        username: username
-                    }]);
-            }
-
-            alert('Account created!');
-        });
-
-        logoutBtn.addEventListener('click', async () => {
-
-            await supabaseClient.auth.signOut();
-
-            location.reload();
-        });
-
-        window.ChatEngine = {
-
-            containerId: 'chat-container',
-            _renderedIds: new Set(),
-
-            onNewMessage: function(msg) {
-
-                const p = document.createElement('div');
-
-                p.className = 'message';
-
-                p.innerHTML = `
-                    [<small>${msg.date} ${msg.time}</small>]
-                    <b>${msg.username}:</b>
-                    <span style="word-break: break-word;">
-                        ${msg.text}
-                    </span>
-                `;
-
-                chatContainer.appendChild(p);
-
-                window.scrollTo(0, document.body.scrollHeight);
-            },
-
-            onClearChat: function() {
-                chatContainer.innerHTML = '';
-            },
-
-            _renderHistoryBanner: function() {
-
-                if (document.getElementById('engine-history-banner')) return;
-
-                const banner = document.createElement('div');
-
-                banner.id = 'engine-history-banner';
-                banner.className = 'history-info';
-
-                banner.innerText = 'Showing last 10 messages — click to load more';
-
-                banner.addEventListener('click', () => {
-                    this.loadFullHistory();
-                });
-
-                chatContainer.prepend(banner);
-            },
-
-            _removeHistoryBanner: function() {
-
-                const banner = document.getElementById('engine-history-banner');
-
-                if (banner) banner.remove();
-            },
-
-            _processAndEmit: function(rawMsg) {
-
-                if (this._renderedIds.has(rawMsg.id)) return;
-
-                this._renderedIds.add(rawMsg.id);
-
-                const dateObj = new Date(rawMsg.created_at);
-
-                const safeMessage = {
-
-                    id: rawMsg.id,
-
-                    username: rawMsg.profiles?.username || 'Unknown',
-
-                    text: DOMPurify.sanitize(rawMsg.content, {
-
-                        ALLOWED_TAGS: [
-                            'b',
-                            'i',
-                            'u',
-                            'strong',
-                            'em',
-                            'img',
-                            'a',
-                            'br',
-                            'code'
-                        ],
-
-                        ALLOWED_ATTR: [
-                            'src',
-                            'href',
-                            'target',
-                            'alt'
-                        ]
-                    }),
-
-                    date: dateObj.toLocaleDateString('uk-UA', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: '2-digit'
-                    }),
-
-                    time: dateObj.toLocaleTimeString('uk-UA', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                    })
-                };
-
-                this.onNewMessage(safeMessage);
-            },
-
-            init: async function() {
-
-                const { data } = await supabaseClient
-                    .from(TABLE_NAME)
-                    .select(`
-                        *,
-                        profiles(username)
-                    `)
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-
-                if (data) {
-
-                    data.reverse().forEach(msg => {
-                        this._processAndEmit(msg);
-                    });
-
-                    if (data.length >= 10) {
-                        this._renderHistoryBanner();
-                    }
-                }
-
-                supabaseClient
-                    .channel('public:messages')
-                    .on(
-                        'postgres_changes',
-                        {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: 'messages'
-                        },
-
-                        async payload => {
-
-                            const msg = payload.new;
-
-                            const username = await getProfileUsername(msg.user_id);
-
-                            this._processAndEmit({
-                                ...msg,
-                                profiles: {
-                                    username
-                                }
-                            });
-                        }
-                    )
-                    .subscribe();
-            },
-
-            loadFullHistory: async function() {
-
-                const { data } = await supabaseClient
-                    .from(TABLE_NAME)
-                    .select(`
-                        *,
-                        profiles(username)
-                    `)
-                    .order('created_at', { ascending: true });
-
-                this._renderedIds.clear();
-
-                this.onClearChat();
-
-                this._removeHistoryBanner();
-
-                data.forEach(msg => {
-                    this._processAndEmit(msg);
-                });
-            },
-
-            send: async function(content) {
-
-                const { data: { user } } = await supabaseClient.auth.getUser();
-
-                if (!user) {
-                    alert('Login first');
-                    return;
-                }
-
-                const { error } = await supabaseClient
-                    .from(TABLE_NAME)
-                    .insert([{
-                        user_id: user.id,
-                        content: content
-                    }]);
-
-                if (error) {
-                    console.error(error);
-                }
-            }
-        };
-
-        chatForm.addEventListener('submit', async function(event) {
-
-            event.preventDefault();
-
-            const text = messageInput.value.trim();
-
-            if (!text) return;
-
-            await ChatEngine.send(text);
-
-            messageInput.value = '';
-        });
-
-        ChatEngine.init();
-
-    </script>
+    <script src="ChatEngine.js"></script>
+    <script src="script.js"></script>
 
 </body>
+
 </html>
