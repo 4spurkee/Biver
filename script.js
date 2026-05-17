@@ -1,135 +1,75 @@
-const chatContainer =
-    document.getElementById('chat-container');
+const chatContainer = document.getElementById('chat-container');
+const chatForm = document.getElementById('chat-form');
+const messageInput = document.getElementById('message');
 
-const chatForm =
-    document.getElementById('chat-form');
+const email = document.getElementById('email');
+const password = document.getElementById('password');
 
-const messageInput =
-    document.getElementById('message');
+document.getElementById('login-btn').onclick = async () => {
 
-const emailInput =
-    document.getElementById('email');
+    const { error } = await supabaseClient.auth.signInWithPassword({
+        email: email.value,
+        password: password.value
+    });
 
-const passwordInput =
-    document.getElementById('password');
+    if (error) alert(error.message);
+    else location.reload();
+};
 
-const loginBtn =
-    document.getElementById('login-btn');
+document.getElementById('signup-btn').onclick = async () => {
 
-const signupBtn =
-    document.getElementById('signup-btn');
-
-const logoutBtn =
-    document.getElementById('logout-btn');
-
-loginBtn.addEventListener('click', async () => {
-
-    const { error } =
-        await supabaseClient.auth
-            .signInWithPassword({
-
-                email: emailInput.value,
-
-                password: passwordInput.value
-            });
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    location.reload();
-});
-
-signupBtn.addEventListener('click', async () => {
-
-    const username =
-        prompt('Choose username:');
-
+    const username = prompt("username");
     if (!username) return;
 
-    const { data, error } =
-        await supabaseClient.auth
-            .signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
+        email: email.value,
+        password: password.value
+    });
 
-                email: emailInput.value,
+    if (error) return alert(error.message);
 
-                password: passwordInput.value
-            });
+    await supabaseClient
+        .from('profiles')
+        .insert([{
+            id: data.user.id,
+            username
+        }]);
 
-    if (error) {
-        alert(error.message);
-        return;
-    }
+    alert("Account created");
+};
 
-    const user = data.user;
-
-    if (user) {
-
-        await supabaseClient
-            .from('profiles')
-            .insert([{
-
-                id: user.id,
-
-                username: username
-            }]);
-    }
-
-    alert('Account created!');
-});
-
-logoutBtn.addEventListener('click', async () => {
-
+document.getElementById('logout-btn').onclick = async () => {
     await supabaseClient.auth.signOut();
-
     location.reload();
-});
+};
 
 ChatEngine.onClearChat = function() {
-
     chatContainer.innerHTML = '';
 };
 
 ChatEngine.onNewMessage = function(msg) {
 
-    const p = document.createElement('div');
+    const div = document.createElement('div');
+    div.className = 'message';
 
-    p.className = 'message';
-
-    p.innerHTML = `
+    div.innerHTML = `
         [<small>${msg.date} ${msg.time}</small>]
         <b>${msg.username}:</b>
-
-        <span style="word-break: break-word;">
-            ${msg.text}
-        </span>
+        <span>${msg.text}</span>
     `;
 
-    chatContainer.appendChild(p);
-
-    window.scrollTo(
-        0,
-        document.body.scrollHeight
-    );
+    chatContainer.appendChild(div);
+    window.scrollTo(0, document.body.scrollHeight);
 };
 
-chatForm.addEventListener(
-    'submit',
+chatForm.onsubmit = async (e) => {
+    e.preventDefault();
 
-    async function(event) {
+    const text = messageInput.value.trim();
+    if (!text) return;
 
-        event.preventDefault();
-
-        const text =
-            messageInput.value.trim();
-
-        if (!text) return;
-
-        await ChatEngine.send(text);
-
-        messageInput.value = '';
-    }
-);
+    await ChatEngine.send(text);
+    messageInput.value = '';
+};
 
 ChatEngine.init();
