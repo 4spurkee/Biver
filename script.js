@@ -72,4 +72,6 @@ chatForm.onsubmit = async (e) => {
     messageInput.value = '';
 };
 
-ChatEngine.init();
+window.addEventListener("DOMContentLoaded", () => {
+    ChatEngine.init();
+});
