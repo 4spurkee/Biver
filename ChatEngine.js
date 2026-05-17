@@ -146,13 +146,14 @@ window.ChatEngine = {
 
     loadFullHistory: async function() {
 
-        const { data } = await supabaseClient
-            .from(TABLE_NAME)
-            .select(`
-                *,
-                profiles(username)
-            `)
-            .order('created_at', { ascending: true });
+const { data, error } = await supabaseClient
+    .from(TABLE_NAME)
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+console.log('INIT DATA:', data);
+console.log('INIT ERROR:', error);
 
         this._renderedIds.clear();
 
