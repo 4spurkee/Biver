@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-const SUPABASE_KEY = 'YOUR_PUBLIC_KEY';
+const SUPABASE_KEY = 'sb_publishable_5_E6pdq5U5M_-ai_4DQ_3Q_TKnVYY-2';
 const TABLE_NAME = 'messages';
 
 const supabaseClient = supabase.createClient(
