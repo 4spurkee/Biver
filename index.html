@@ -10,15 +10,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: Arial;
-            background: #1f2a12;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #3b4a1f, #1f2a12);
             color: #ffe9a3;
+            font-family: Trebuchet MS;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: space-between;
         }
 
         #chat-container {
-            padding: 100px 20px 80px;
+            margin-top: 90px;
+            margin-bottom: 70px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -38,21 +58,29 @@
             display: flex;
             gap: 10px;
             padding: 10px;
-            background: #111;
+            background: rgba(0,0,0,0.6);
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #d6b65a;
+            background: #1f2a12;
+            color: #ffe9a3;
         }
 
         #message {
             flex: 1;
-            padding: 10px;
         }
 
         button {
-            width: 50px;
+            width: 60px;
+            border-radius: 8px;
         }
 
         .history-info {
             padding: 10px;
-            border: 1px solid #d6b65a;
+            border: 2px solid #d6b65a;
             text-align: center;
             cursor: pointer;
             background: #3a4620;
@@ -62,11 +90,15 @@
 
 <body>
 
+<div class="top">
+    <div>Biver Chat</div>
+    <input id="username" placeholder="nickname">
+</div>
+
 <div id="chat-container"></div>
 
 <form id="chat-form">
-    <input id="username" placeholder="username">
-    <input id="message" placeholder="message">
+    <input id="message" placeholder="write message..." autocomplete="off">
     <button>➤</button>
 </form>
 
