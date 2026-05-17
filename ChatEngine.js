@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
 
 const TABLE_NAME = 'messages';
 
@@ -14,33 +14,49 @@ window.ChatEngine = {
 
     _renderedIds: new Set(),
 
-    onNewMessage(msg) {
-        console.warn("Renderer not set");
+    onNewMessage: function () {},
+    onClearChat: function () {},
+
+    _bannerShown: false,
+
+    _renderHistoryBanner() {
+
+        const el = document.createElement('div');
+        el.className = 'history-info';
+        el.id = 'history-banner';
+        el.innerText = 'Showing last 10 messages — click to load full history';
+
+        el.onclick = () => this.loadFullHistory();
+
+        document.getElementById(this.containerId).prepend(el);
+
+        this._bannerShown = true;
     },
 
-    onClearChat() {},
-
-    _processAndEmit(rawMsg) {
-
-        if (this._renderedIds.has(rawMsg.id)) return;
-        this._renderedIds.add(rawMsg.id);
-
-        const dateObj = new Date(rawMsg.created_at);
-
-        const msg = {
-            id: rawMsg.id,
-            username: rawMsg.username || 'Unknown',
-            text: DOMPurify.sanitize(rawMsg.content || ''),
-            date: dateObj.toLocaleDateString(),
-            time: dateObj.toLocaleTimeString()
-        };
-
-        this.onNewMessage(msg);
+    _removeBanner() {
+        const b = document.getElementById('history-banner');
+        if (b) b.remove();
     },
 
-    init: async function () {
+    _process(msg) {
 
-        console.log("INIT START");
+        if (this._renderedIds.has(msg.id)) return;
+        this._renderedIds.add(msg.id);
+
+        const d = new Date(msg.created_at);
+
+        this.onNewMessage({
+            id: msg.id,
+            username: msg.username || "Unknown",
+            text: DOMPurify.sanitize(msg.content || ''),
+            date: d.toLocaleDateString(),
+            time: d.toLocaleTimeString()
+        });
+    },
+
+    async init() {
+
+        console.log("ChatEngine INIT");
 
         const { data, error } = await supabaseClient
             .from(TABLE_NAME)
@@ -48,33 +64,49 @@ window.ChatEngine = {
             .order('created_at', { ascending: false })
             .limit(10);
 
-        console.log("INIT DATA:", data, error);
+        if (error) console.error(error);
 
         if (data) {
-            data.reverse().forEach(m => this._processAndEmit(m));
+            data.reverse().forEach(m => this._process(m));
+
+            if (data.length >= 10) {
+                this._renderHistoryBanner();
+            }
         }
 
         supabaseClient
-            .channel('messages')
+            .channel('chat')
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: TABLE_NAME
             }, payload => {
 
-                console.log("REALTIME:", payload);
-
-                this._processAndEmit(payload.new);
+                this._process(payload.new);
             })
             .subscribe();
     },
 
-    send: async function (username, content) {
+    async loadFullHistory() {
 
-        const { error } = await supabaseClient
+        const { data } = await supabaseClient
+            .from(TABLE_NAME)
+            .select('*')
+            .order('created_at', { ascending: true });
+
+        this._renderedIds.clear();
+
+        this.onClearChat();
+
+        this._removeBanner();
+
+        data.forEach(m => this._process(m));
+    },
+
+    async send(username, content) {
+
+        await supabaseClient
             .from(TABLE_NAME)
             .insert([{ username, content }]);
-
-        if (error) console.error(error);
     }
 };
