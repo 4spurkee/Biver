@@ -1,14 +1,10 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
 
-const SUPABASE_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw'';
 
 const TABLE_NAME = 'messages';
 
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 window.ChatEngine = {
 
@@ -18,16 +14,23 @@ window.ChatEngine = {
     onNewMessage(msg) {},
     onClearChat() {},
 
-    _processAndEmit(rawMsg) {
+    async _processAndEmit(rawMsg) {
 
         if (this._renderedIds.has(rawMsg.id)) return;
         this._renderedIds.add(rawMsg.id);
+
+        // 🔥 FIXED: fetch username from profiles
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('username')
+            .eq('id', rawMsg.user_id)
+            .single();
 
         const dateObj = new Date(rawMsg.created_at);
 
         const safeMessage = {
             id: rawMsg.id,
-            username: rawMsg.username || 'User',
+            username: profile?.username || 'Unknown',
             text: DOMPurify.sanitize(rawMsg.content),
             date: dateObj.toLocaleDateString(),
             time: dateObj.toLocaleTimeString()
@@ -44,7 +47,9 @@ window.ChatEngine = {
             .order('created_at', { ascending: true });
 
         if (data) {
-            data.forEach(msg => this._processAndEmit(msg));
+            for (const msg of data) {
+                await this._processAndEmit(msg);
+            }
         }
 
         supabaseClient
