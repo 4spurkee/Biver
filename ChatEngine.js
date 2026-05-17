@@ -1,5 +1,7 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
+
+const SUPABASE_KEY =
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
 
 const TABLE_NAME = 'messages';
 
@@ -14,60 +16,97 @@ window.ChatEngine = {
 
     _renderedIds: new Set(),
 
-    onNewMessage: function () {},
-    onClearChat: function () {},
-
-    _bannerShown: false,
-
-    _renderHistoryBanner() {
-
-        const el = document.createElement('div');
-        el.className = 'history-info';
-        el.id = 'history-banner';
-        el.innerText = 'Showing last 10 messages — click to load full history';
-
-        el.onclick = () => this.loadFullHistory();
-
-        document.getElementById(this.containerId).prepend(el);
-
-        this._bannerShown = true;
+    onNewMessage: function(msg) {
+        console.warn("onNewMessage not configured");
     },
 
-    _removeBanner() {
-        const b = document.getElementById('history-banner');
-        if (b) b.remove();
+    onClearChat: function() {
+        console.warn("onClearChat not configured");
     },
 
-    _process(msg) {
+    _renderHistoryBanner: function() {
 
-        if (this._renderedIds.has(msg.id)) return;
-        this._renderedIds.add(msg.id);
+        const container = document.getElementById(this.containerId);
 
-        const d = new Date(msg.created_at);
+        if (!container) return;
 
-        this.onNewMessage({
-            id: msg.id,
-            username: msg.username || "Unknown",
-            text: DOMPurify.sanitize(msg.content || ''),
-            date: d.toLocaleDateString(),
-            time: d.toLocaleTimeString()
+        if (document.getElementById('engine-history-banner')) return;
+
+        const banner = document.createElement('div');
+
+        banner.id = 'engine-history-banner';
+        banner.className = 'history-info';
+
+        banner.innerText =
+            'Showing last 10 messages — click to load more';
+
+        banner.addEventListener('click', () => {
+            this.loadFullHistory();
         });
+
+        container.prepend(banner);
     },
 
-    async init() {
+    _removeHistoryBanner: function() {
 
-        console.log("ChatEngine INIT");
+        const banner = document.getElementById('engine-history-banner');
 
-        const { data, error } = await supabaseClient
+        if (banner) banner.remove();
+    },
+
+    _processAndEmit: function(rawMsg) {
+
+        if (this._renderedIds.has(rawMsg.id)) return;
+
+        this._renderedIds.add(rawMsg.id);
+
+        const dateObj = new Date(rawMsg.created_at);
+
+        const safeMessage = {
+
+            id: rawMsg.id,
+
+            username: rawMsg.profiles?.username || 'Unknown',
+
+            text: DOMPurify.sanitize(rawMsg.content, {
+                ALLOWED_TAGS: [
+                    'b','i','u','strong','em','img','a','br','code'
+                ],
+                ALLOWED_ATTR: ['src','href','target','alt']
+            }),
+
+            date: dateObj.toLocaleDateString('uk-UA', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
+            }),
+
+            time: dateObj.toLocaleTimeString('uk-UA', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })
+        };
+
+        this.onNewMessage(safeMessage);
+    },
+
+    init: async function() {
+
+        const { data } = await supabaseClient
             .from(TABLE_NAME)
-            .select('*')
+            .select(`
+                *,
+                profiles(username)
+            `)
             .order('created_at', { ascending: false })
             .limit(10);
 
-        if (error) console.error(error);
-
         if (data) {
-            data.reverse().forEach(m => this._process(m));
+
+            data.reverse().forEach(msg => {
+                this._processAndEmit(msg);
+            });
 
             if (data.length >= 10) {
                 this._renderHistoryBanner();
@@ -75,38 +114,76 @@ window.ChatEngine = {
         }
 
         supabaseClient
-            .channel('chat')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: TABLE_NAME
-            }, payload => {
+            .channel('messages-realtime')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: TABLE_NAME
+                },
+                async payload => {
 
-                this._process(payload.new);
-            })
+                    const msg = payload.new;
+
+                    const { data: profile } =
+                        await supabaseClient
+                            .from('profiles')
+                            .select('username')
+                            .eq('id', msg.user_id)
+                            .single();
+
+                    this._processAndEmit({
+                        ...msg,
+                        profiles: {
+                            username: profile?.username || 'Unknown'
+                        }
+                    });
+                }
+            )
             .subscribe();
     },
 
-    async loadFullHistory() {
+    loadFullHistory: async function() {
 
         const { data } = await supabaseClient
             .from(TABLE_NAME)
-            .select('*')
+            .select(`
+                *,
+                profiles(username)
+            `)
             .order('created_at', { ascending: true });
 
         this._renderedIds.clear();
 
         this.onClearChat();
 
-        this._removeBanner();
+        this._removeHistoryBanner();
 
-        data.forEach(m => this._process(m));
+        data.forEach(msg => {
+            this._processAndEmit(msg);
+        });
     },
 
-    async send(username, content) {
+    send: async function(content) {
 
-        await supabaseClient
+        const { data: { user } } =
+            await supabaseClient.auth.getUser();
+
+        if (!user) {
+            alert('You must be logged in');
+            return;
+        }
+
+        const { error } = await supabaseClient
             .from(TABLE_NAME)
-            .insert([{ username, content }]);
+            .insert([{
+                user_id: user.id,
+                content: content
+            }]);
+
+        if (error) {
+            console.error(error);
+        }
     }
 };
