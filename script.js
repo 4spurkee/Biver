@@ -1,4 +1,4 @@
-const chatContainer = document.getElementById('chat-container');
+const chat = document.getElementById('chat-container');
 const form = document.getElementById('chat-form');
 const input = document.getElementById('message');
 const username = document.getElementById('username');
@@ -14,16 +14,21 @@ ChatEngine.onNewMessage = function (msg) {
         <div>${msg.text}</div>
     `;
 
-    chatContainer.appendChild(div);
+    chat.appendChild(div);
 
     window.scrollTo(0, document.body.scrollHeight);
 };
 
+ChatEngine.onClearChat = function () {
+    chat.innerHTML = '';
+};
+
 form.addEventListener('submit', e => {
+
     e.preventDefault();
 
-    const user = username.value || "Anonymous";
-    const text = input.value;
+    const user = username.value.trim() || "Anonymous";
+    const text = input.value.trim();
 
     if (!text) return;
 
