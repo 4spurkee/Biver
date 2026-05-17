@@ -1,40 +1,135 @@
-const chat = document.getElementById('chat-container');
-const form = document.getElementById('chat-form');
-const input = document.getElementById('message');
-const username = document.getElementById('username');
+const chatContainer =
+    document.getElementById('chat-container');
 
-ChatEngine.onNewMessage = function (msg) {
+const chatForm =
+    document.getElementById('chat-form');
 
-    const div = document.createElement('div');
-    div.className = 'message';
+const messageInput =
+    document.getElementById('message');
 
-    div.innerHTML = `
-        <small>${msg.date} ${msg.time}</small><br>
+const emailInput =
+    document.getElementById('email');
+
+const passwordInput =
+    document.getElementById('password');
+
+const loginBtn =
+    document.getElementById('login-btn');
+
+const signupBtn =
+    document.getElementById('signup-btn');
+
+const logoutBtn =
+    document.getElementById('logout-btn');
+
+loginBtn.addEventListener('click', async () => {
+
+    const { error } =
+        await supabaseClient.auth
+            .signInWithPassword({
+
+                email: emailInput.value,
+
+                password: passwordInput.value
+            });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    location.reload();
+});
+
+signupBtn.addEventListener('click', async () => {
+
+    const username =
+        prompt('Choose username:');
+
+    if (!username) return;
+
+    const { data, error } =
+        await supabaseClient.auth
+            .signUp({
+
+                email: emailInput.value,
+
+                password: passwordInput.value
+            });
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    const user = data.user;
+
+    if (user) {
+
+        await supabaseClient
+            .from('profiles')
+            .insert([{
+
+                id: user.id,
+
+                username: username
+            }]);
+    }
+
+    alert('Account created!');
+});
+
+logoutBtn.addEventListener('click', async () => {
+
+    await supabaseClient.auth.signOut();
+
+    location.reload();
+});
+
+ChatEngine.onClearChat = function() {
+
+    chatContainer.innerHTML = '';
+};
+
+ChatEngine.onNewMessage = function(msg) {
+
+    const p = document.createElement('div');
+
+    p.className = 'message';
+
+    p.innerHTML = `
+        [<small>${msg.date} ${msg.time}</small>]
         <b>${msg.username}:</b>
-        <div>${msg.text}</div>
+
+        <span style="word-break: break-word;">
+            ${msg.text}
+        </span>
     `;
 
-    chat.appendChild(div);
+    chatContainer.appendChild(p);
 
-    window.scrollTo(0, document.body.scrollHeight);
+    window.scrollTo(
+        0,
+        document.body.scrollHeight
+    );
 };
 
-ChatEngine.onClearChat = function () {
-    chat.innerHTML = '';
-};
+chatForm.addEventListener(
+    'submit',
 
-form.addEventListener('submit', e => {
+    async function(event) {
 
-    e.preventDefault();
+        event.preventDefault();
 
-    const user = username.value.trim() || "Anonymous";
-    const text = input.value.trim();
+        const text =
+            messageInput.value.trim();
 
-    if (!text) return;
+        if (!text) return;
 
-    ChatEngine.send(user, text);
+        await ChatEngine.send(text);
 
-    input.value = '';
-});
+        messageInput.value = '';
+    }
+);
 
 ChatEngine.init();
