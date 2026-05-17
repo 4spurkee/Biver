@@ -1,30 +1,33 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_5_E6pdq5U5M_-ai_4DQ_3Q_TKnVYY-2';
-const TABLE_NAME = 'Biver'
+const TABLE_NAME = 'Biver';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-
-
 /**
  * @typedef {Object} ChatMessage
- * @property {string} id - Унікальний ідентифікатор повідомлення.
- * @property {string} username - Нікнейм автора.
- * @property {string} text - Безпечний HTML-текст (очищений від XSS).
- * @property {string} date - Дата відправки (ДД.ММ.РР).
- * @property {string} time - Час відправки (ГГ:ХХ:СС).
+ * @property {string} id - Unique message identifier.
+ * @property {string} username - Author nickname.
+ * @property {string} text - Safe HTML text (sanitized from XSS).
+ * @property {string} date - Send date (DD.MM.YY).
+ * @property {string} time - Send time (HH:MM:SS).
  */
 
 window.ChatEngine = {
-    containerId: 'chat-container', // ID контейнера чату в HTML
+    containerId: 'chat-container', // Chat container ID in HTML
     _renderedIds: new Set(),
-    _optimisticEcho: new Set(), 
+    _optimisticEcho: new Set(),
 
     /** @param {ChatMessage} msg @param {boolean} prepend */
-    onNewMessage: function(msg, prepend = false) { console.warn("onNewMessage не налаштовано!"); },
-    onClearChat: function() { console.warn("onClearChat не налаштовано!"); },
-    
-    // Внутрішній метод створення плашки історії
+    onNewMessage: function(msg, prepend = false) {
+        console.warn("onNewMessage is not configured!");
+    },
+
+    onClearChat: function() {
+        console.warn("onClearChat is not configured!");
+    },
+
+    // Internal method for creating history banner
     _renderHistoryBanner: function() {
         const container = document.getElementById(this.containerId);
         if (!container || document.getElementById('engine-history-banner')) return;
@@ -32,8 +35,8 @@ window.ChatEngine = {
         const banner = document.createElement('div');
         banner.id = 'engine-history-banner';
         banner.className = 'history-info';
-        banner.innerText = 'Показано останні 10 повідомлень. Клікніть сюди, щоб завантажити більше';
-        
+        banner.innerText = 'Showing last 10 messages. Click here to load more';
+
         banner.addEventListener('click', () => {
             this.loadFullHistory();
         });
@@ -41,20 +44,21 @@ window.ChatEngine = {
         container.prepend(banner);
     },
 
-    // Внутрішній метод видалення плашки
+    // Internal method for removing banner
     _removeHistoryBanner: function() {
         const banner = document.getElementById('engine-history-banner');
         if (banner) banner.remove();
     },
 
-    // Внутрішній парсер та валідатор повідомлень
+    // Internal message parser and validator
     _processAndEmit: function(rawMsg, prepend = false) {
         if (!rawMsg.id.toString().startsWith('temp_')) {
             const echoKey = `${rawMsg.username}_${rawMsg.content}`;
+
             if (this._optimisticEcho.has(echoKey)) {
                 this._optimisticEcho.delete(echoKey);
-                this._renderedIds.add(rawMsg.id); 
-                return; 
+                this._renderedIds.add(rawMsg.id);
+                return;
             }
         }
 
@@ -62,41 +66,90 @@ window.ChatEngine = {
         this._renderedIds.add(rawMsg.id);
 
         const dateObj = new Date(rawMsg.created_at);
-        
+
         const safeMessage = {
             id: rawMsg.id,
             username: rawMsg.username,
-            text: DOMPurify.sanitize(rawMsg.content, { ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'img', 'a', 'br', 'code'], ALLOWED_ATTR: ['src', 'href', 'target', 'alt'] }),
-            date: dateObj.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }),
-            time: dateObj.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            text: DOMPurify.sanitize(rawMsg.content, {
+                ALLOWED_TAGS: [
+                    'b',
+                    'i',
+                    'u',
+                    'strong',
+                    'em',
+                    'img',
+                    'a',
+                    'br',
+                    'code'
+                ],
+                ALLOWED_ATTR: [
+                    'src',
+                    'href',
+                    'target',
+                    'alt'
+                ]
+            }),
+            date: dateObj.toLocaleDateString('uk-UA', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
+            }),
+            time: dateObj.toLocaleTimeString('uk-UA', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })
         };
 
         this.onNewMessage(safeMessage, prepend);
     },
 
     init: async function() {
-        const { data, error } = await supabaseClient.from(TABLE_NAME).select('*').order('created_at', { ascending: false }).limit(10);
+        const { data, error } = await supabaseClient
+            .from(TABLE_NAME)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10);
+
         if (!error && data) {
             data.reverse().forEach(msg => this._processAndEmit(msg));
+
             if (data.length >= 10) {
                 this._renderHistoryBanner();
             }
         }
 
         supabaseClient
-            .channel('public:'+TABLE_NAME)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                this._processAndEmit(payload.new);
-            }).subscribe();
+            .channel('public:' + TABLE_NAME)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                },
+                payload => {
+                    this._processAndEmit(payload.new);
+                }
+            )
+            .subscribe();
     },
 
     loadFullHistory: async function() {
-        const { data, error } = await supabaseClient.from(TABLE_NAME).select('*').order('created_at', { ascending: true });
+        const { data, error } = await supabaseClient
+            .from(TABLE_NAME)
+            .select('*')
+            .order('created_at', { ascending: true });
+
         if (!error) {
-            this._renderedIds.clear(); 
+            this._renderedIds.clear();
             this._optimisticEcho.clear();
-            this.onClearChat();        
-            this._removeHistoryBanner(); // Автоматично ховаємо плашку, бо завантажено ВСЕ
+
+            this.onClearChat();
+
+            // Automatically hide banner because EVERYTHING is loaded
+            this._removeHistoryBanner();
+
             data.forEach(msg => this._processAndEmit(msg));
         }
     },
@@ -104,6 +157,7 @@ window.ChatEngine = {
     send: async function(username, content) {
         const tempId = 'temp_' + Date.now();
         const echoKey = `${username}_${content}`;
+
         this._optimisticEcho.add(echoKey);
 
         this._processAndEmit({
@@ -113,7 +167,12 @@ window.ChatEngine = {
             created_at: new Date().toISOString()
         });
 
-        const { error } = await supabaseClient.from(TABLE_NAME).insert([{ username, content }]);
-        if (error) console.error('Помилка Supabase:', error);
+        const { error } = await supabaseClient
+            .from(TABLE_NAME)
+            .insert([{ username, content }]);
+
+        if (error) {
+            console.error('Supabase error:', error);
+        }
     }
 };
