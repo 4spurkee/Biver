@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -25,7 +25,7 @@
             flex-direction: column;
         }
 
-        /* ================= TOP BAR (NEW) ================= */
+        /* ================= TOP BAR ================= */
         .top-bar {
             position: fixed;
             top: 0;
@@ -76,20 +76,21 @@
             outline: none;
         }
 
-        /* PUSH CHAT BELOW TOP BAR */
+        /* CHAT */
         #chat-container {
             margin-top: 110px;
             margin-bottom: 80px;
+
             flex: 1;
             padding: 25px;
 
             overflow-y: auto;
+
             display: flex;
             flex-direction: column;
             gap: 14px;
         }
 
-        /* ================= CHAT (UNCHANGED) ================= */
         #chat-container img {
             max-width: 200px;
             border-radius: 8px;
@@ -99,9 +100,12 @@
 
         .message {
             background: linear-gradient(135deg, #2f3a17, #1c250f);
+
             border: 1px solid #d6b65a;
             border-radius: 14px;
+
             padding: 14px 18px;
+
             max-width: 80%;
             width: fit-content;
 
@@ -117,7 +121,7 @@
             border-color: #ffe08a;
         }
 
-        /* ================= INPUT BAR (UPDATED) ================= */
+        /* INPUT BAR */
         #chat-form {
             position: fixed;
             bottom: 0;
@@ -136,6 +140,7 @@
 
         #message {
             flex: 1;
+
             padding: 12px 14px;
 
             border-radius: 12px;
@@ -147,7 +152,6 @@
             outline: none;
         }
 
-        /* ICON SEND BUTTON */
         button {
             width: 46px;
             height: 46px;
@@ -198,22 +202,36 @@
             <span>a shitty html parody</span>
         </div>
 
-        <input type="text" id="username" placeholder="nickname">
+        <input
+            type="text"
+            id="username"
+            placeholder="nickname"
+        >
 
     </div>
 
-    <!-- CHAT (UNCHANGED) -->
+    <!-- CHAT -->
     <div id="chat-container"></div>
 
     <!-- INPUT -->
     <form id="chat-form">
-        <input type="text" id="message" placeholder="Write text or HTML..." autocomplete="off" required>
+
+        <input
+            type="text"
+            id="message"
+            placeholder="Write text or HTML..."
+            autocomplete="off"
+            required
+        >
 
         <button type="submit">
+
             <svg viewBox="0 0 24 24">
                 <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
             </svg>
+
         </button>
+
     </form>
 
     <script src="ChatEngine.js"></script>
