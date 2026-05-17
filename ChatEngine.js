@@ -1,7 +1,8 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-const SUPABASE_KEY =
-'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
+const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
+
 const TABLE_NAME = 'messages';
+
 const supabaseClient = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
@@ -13,205 +14,67 @@ window.ChatEngine = {
 
     _renderedIds: new Set(),
 
-    onNewMessage: function(msg) {
-        console.warn('onNewMessage not configured');
+    onNewMessage(msg) {
+        console.warn("Renderer not set");
     },
 
-    onClearChat: function() {
-        console.warn('onClearChat not configured');
-    },
+    onClearChat() {},
 
-    _renderHistoryBanner: function() {
-
-        const container = document.getElementById(this.containerId);
-
-        if (!container) return;
-
-        if (document.getElementById('engine-history-banner')) return;
-
-        const banner = document.createElement('div');
-
-        banner.id = 'engine-history-banner';
-
-        banner.className = 'history-info';
-
-        banner.innerText =
-            'Showing last 10 messages — click to load more';
-
-        banner.addEventListener('click', () => {
-            this.loadFullHistory();
-        });
-
-        container.prepend(banner);
-    },
-
-    _removeHistoryBanner: function() {
-
-        const banner = document.getElementById(
-            'engine-history-banner'
-        );
-
-        if (banner) banner.remove();
-    },
-
-    _processAndEmit: function(rawMsg) {
+    _processAndEmit(rawMsg) {
 
         if (this._renderedIds.has(rawMsg.id)) return;
-
         this._renderedIds.add(rawMsg.id);
 
         const dateObj = new Date(rawMsg.created_at);
 
-        const safeMessage = {
-
+        const msg = {
             id: rawMsg.id,
-
-            username:
-                rawMsg.profiles?.username || 'Unknown',
-
-            text: DOMPurify.sanitize(rawMsg.content, {
-
-                ALLOWED_TAGS: [
-                    'b',
-                    'i',
-                    'u',
-                    'strong',
-                    'em',
-                    'img',
-                    'a',
-                    'br',
-                    'code'
-                ],
-
-                ALLOWED_ATTR: [
-                    'src',
-                    'href',
-                    'target',
-                    'alt'
-                ]
-            }),
-
-            date: dateObj.toLocaleDateString('uk-UA', {
-                day: '2-digit',
-                month: '2-digit',
-                year: '2-digit'
-            }),
-
-            time: dateObj.toLocaleTimeString('uk-UA', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            })
+            username: rawMsg.username || 'Unknown',
+            text: DOMPurify.sanitize(rawMsg.content || ''),
+            date: dateObj.toLocaleDateString(),
+            time: dateObj.toLocaleTimeString()
         };
 
-        this.onNewMessage(safeMessage);
+        this.onNewMessage(msg);
     },
 
-    init: async function() {
+    init: async function () {
 
-        const { data } = await supabaseClient
+        console.log("INIT START");
+
+        const { data, error } = await supabaseClient
             .from(TABLE_NAME)
-            .select(`
-                *,
-                profiles(username)
-            `)
-            .order('created_at', {
-                ascending: false
-            })
+            .select('*')
+            .order('created_at', { ascending: false })
             .limit(10);
 
+        console.log("INIT DATA:", data, error);
+
         if (data) {
-
-            data.reverse().forEach(msg => {
-                this._processAndEmit(msg);
-            });
-
-            if (data.length >= 10) {
-                this._renderHistoryBanner();
-            }
+            data.reverse().forEach(m => this._processAndEmit(m));
         }
 
         supabaseClient
-            .channel('public:messages')
+            .channel('messages')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: TABLE_NAME
+            }, payload => {
 
-            .on(
-                'postgres_changes',
+                console.log("REALTIME:", payload);
 
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages'
-                },
-
-                async payload => {
-
-                    const msg = payload.new;
-
-                    const { data } =
-                        await supabaseClient
-                            .from('profiles')
-                            .select('username')
-                            .eq('id', msg.user_id)
-                            .single();
-
-                    this._processAndEmit({
-
-                        ...msg,
-
-                        profiles: {
-                            username:
-                                data?.username || 'Unknown'
-                        }
-                    });
-                }
-            )
-
+                this._processAndEmit(payload.new);
+            })
             .subscribe();
     },
 
-    loadFullHistory: async function() {
-
-        const { data } = await supabaseClient
-            .from(TABLE_NAME)
-            .select(`
-                *,
-                profiles(username)
-            `)
-            .order('created_at', {
-                ascending: true
-            });
-
-        this._renderedIds.clear();
-
-        this.onClearChat();
-
-        this._removeHistoryBanner();
-
-        data.forEach(msg => {
-            this._processAndEmit(msg);
-        });
-    },
-
-    send: async function(content) {
-
-        const {
-            data: { user }
-        } = await supabaseClient.auth.getUser();
-
-        if (!user) {
-            alert('Login first');
-            return;
-        }
+    send: async function (username, content) {
 
         const { error } = await supabaseClient
             .from(TABLE_NAME)
-            .insert([{
-                user_id: user.id,
-                content: content
-            }]);
+            .insert([{ username, content }]);
 
-        if (error) {
-            console.error(error);
-        }
+        if (error) console.error(error);
     }
 };
