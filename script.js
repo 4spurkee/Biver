@@ -1,135 +1,35 @@
-const chatContainer =
-    document.getElementById('chat-container');
+const chatContainer = document.getElementById('chat-container');
+const form = document.getElementById('chat-form');
+const input = document.getElementById('message');
+const username = document.getElementById('username');
 
-const chatForm =
-    document.getElementById('chat-form');
+ChatEngine.onNewMessage = function (msg) {
 
-const messageInput =
-    document.getElementById('message');
+    const div = document.createElement('div');
+    div.className = 'message';
 
-const emailInput =
-    document.getElementById('email');
-
-const passwordInput =
-    document.getElementById('password');
-
-const loginBtn =
-    document.getElementById('login-btn');
-
-const signupBtn =
-    document.getElementById('signup-btn');
-
-const logoutBtn =
-    document.getElementById('logout-btn');
-
-loginBtn.addEventListener('click', async () => {
-
-    const { error } =
-        await supabaseClient.auth
-            .signInWithPassword({
-
-                email: emailInput.value,
-
-                password: passwordInput.value
-            });
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    location.reload();
-});
-
-signupBtn.addEventListener('click', async () => {
-
-    const username =
-        prompt('Choose username:');
-
-    if (!username) return;
-
-    const { data, error } =
-        await supabaseClient.auth
-            .signUp({
-
-                email: emailInput.value,
-
-                password: passwordInput.value
-            });
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    const user = data.user;
-
-    if (user) {
-
-        await supabaseClient
-            .from('profiles')
-            .insert([{
-
-                id: user.id,
-
-                username: username
-            }]);
-    }
-
-    alert('Account created!');
-});
-
-logoutBtn.addEventListener('click', async () => {
-
-    await supabaseClient.auth.signOut();
-
-    location.reload();
-});
-
-ChatEngine.onClearChat = function() {
-
-    chatContainer.innerHTML = '';
-};
-
-ChatEngine.onNewMessage = function(msg) {
-
-    const p = document.createElement('div');
-
-    p.className = 'message';
-
-    p.innerHTML = `
-        [<small>${msg.date} ${msg.time}</small>]
+    div.innerHTML = `
+        <small>${msg.date} ${msg.time}</small><br>
         <b>${msg.username}:</b>
-
-        <span style="word-break: break-word;">
-            ${msg.text}
-        </span>
+        <div>${msg.text}</div>
     `;
 
-    chatContainer.appendChild(p);
+    chatContainer.appendChild(div);
 
-    window.scrollTo(
-        0,
-        document.body.scrollHeight
-    );
+    window.scrollTo(0, document.body.scrollHeight);
 };
 
-chatForm.addEventListener(
-    'submit',
+form.addEventListener('submit', e => {
+    e.preventDefault();
 
-    async function(event) {
+    const user = username.value || "Anonymous";
+    const text = input.value;
 
-        event.preventDefault();
+    if (!text) return;
 
-        const text =
-            messageInput.value.trim();
+    ChatEngine.send(user, text);
 
-        if (!text) return;
-
-        await ChatEngine.send(text);
-
-        messageInput.value = '';
-    }
-);
+    input.value = '';
+});
 
 ChatEngine.init();
