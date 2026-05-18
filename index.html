@@ -166,6 +166,84 @@
         .history-info:hover {
             background: linear-gradient(135deg, #4a5a2a, #2a3315);
         }
+
+        #current-user {
+            color: #ffe9a3;
+            font-size: 13px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* MOBILE */
+        @media (max-width: 700px) {
+
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+
+                gap: 14px;
+
+                padding: 16px;
+            }
+
+            .brand {
+                align-items: center;
+                text-align: center;
+            }
+
+            .brand h1 {
+                font-size: 30px;
+            }
+
+            .brand span {
+                font-size: 12px;
+            }
+
+            #auth-box {
+                display: grid;
+
+                grid-template-columns: 1fr 1fr auto;
+
+                gap: 8px;
+                align-items: center;
+            }
+
+            #email,
+            #password {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .auth-buttons {
+                display: grid;
+
+                grid-template-columns: 1fr 1fr 1fr;
+
+                gap: 8px;
+            }
+
+            .auth-buttons button {
+                width: 100%;
+            }
+
+            #chat-container {
+                margin-top: 250px;
+                margin-bottom: 90px;
+            }
+
+            #chat-form {
+                padding: 12px;
+            }
+
+            #message {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 
@@ -181,10 +259,21 @@
         <div id="auth-box">
 
             <input type="email" id="email" placeholder="email">
+
             <input type="password" id="password" placeholder="password">
 
+            <div id="current-user">
+                Not logged in
+            </div>
+
+        </div>
+
+        <div class="auth-buttons">
+
             <button id="login-btn">Login</button>
+
             <button id="signup-btn">Sign up</button>
+
             <button id="logout-btn">Logout</button>
 
         </div>
