@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,11 +61,10 @@
             opacity: 0.8;
         }
 
-        /* SETTINGS BUTTON */
         .settings-btn {
             width: 42px;
             height: 42px;
-
+            padding: 0;
             border-radius: 10px;
             border: 2px solid #d6b65a;
 
@@ -92,9 +90,12 @@
         #chat-container {
             margin-top: 110px;
             margin-bottom: 80px;
+
             flex: 1;
             padding: 25px;
+
             overflow-y: auto;
+
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -102,11 +103,15 @@
 
         .message {
             background: linear-gradient(135deg, #2f3a17, #1c250f);
+
             border: 1px solid #d6b65a;
             border-radius: 14px;
+
             padding: 14px 18px;
+
             max-width: 80%;
             width: fit-content;
+
             color: #ffe9a3;
             line-height: 1.5;
         }
@@ -115,67 +120,129 @@
             position: fixed;
             bottom: 0;
             width: 100%;
+
             display: flex;
             gap: 10px;
+
             padding: 15px;
+
             background: rgba(25, 35, 12, 0.95);
             backdrop-filter: blur(10px);
+
             border-top: 1px solid #d6b65a;
         }
 
         #message {
             flex: 1;
-            padding: 10px;
+            padding: 10px 12px;
             border-radius: 10px;
             border: 2px solid #d6b65a;
             background: #1f2a12;
             color: #ffe9a3;
+            outline: none;
         }
 
         button {
             padding: 10px 14px;
             border-radius: 10px;
             border: 2px solid #d6b65a;
+
             background: linear-gradient(135deg, #3a4620, #1f2a12);
             color: #ffe9a3;
+
             cursor: pointer;
+            transition: 0.3s ease;
         }
 
         button:hover {
             background: linear-gradient(135deg, #4a5a2a, #2a3315);
         }
 
-        /* SETTINGS PANEL */
-        .settings-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
+        .history-info {
+            margin: 0 25px 14px;
+            padding: 12px 16px;
 
-    width: 300px;
-    height: 100vh;
+            border-radius: 12px;
+            border: 2px solid #d6b65a;
 
-    background: #1f2a12;
-    border-left: 2px solid #d6b65a;
+            background: linear-gradient(135deg, #3a4620, #1f2a12);
+            color: #ffe9a3;
 
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
 
-    z-index: 9999;
-}
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
 
-.settings-panel.open {
-    transform: translateX(0);
-}0;
+        .history-info:hover {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
+        }
+
+        #settings-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s ease;
+            z-index: 99998;
+        }
+
+        #settings-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #settings-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+
+            width: 360px;
+            max-width: calc(100vw - 20px);
+            max-height: 80vh;
+
+            background: rgba(25, 35, 12, 0.98);
+            border: 2px solid #d6b65a;
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+
+            padding: 12px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            transform: translate(-50%, -52%) scale(0.96);
+            opacity: 0;
+            pointer-events: none;
+            overflow: auto;
+            z-index: 99999;
+
+            transition: 0.25s ease;
+        }
+
+        #settings-panel.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
         }
 
         .tab-buttons {
             display: flex;
-            gap: 5px;
+            gap: 6px;
         }
 
         .tab-buttons button {
             flex: 1;
+            padding: 8px 10px;
             font-size: 12px;
+        }
+
+        .tab-buttons button.active {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
         }
 
         .tab-content {
@@ -188,59 +255,98 @@
             display: none;
         }
 
+        #current-user {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d6b65a;
+            background: #1f2a12;
+            color: #ffe9a3;
+            text-align: center;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .auth-buttons button {
+            flex: 1;
+        }
+
+        #settings-panel input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 2px solid #d6b65a;
+            background: #1f2a12;
+            color: #ffe9a3;
+            outline: none;
+        }
+
+        .wip-note {
+            padding: 14px;
+            border: 1px dashed #d6b65a;
+            border-radius: 10px;
+            text-align: center;
+            color: #ffe9a3;
+        }
+
+        @media (max-width: 700px) {
+            #chat-container {
+                margin-top: 110px;
+            }
+
+            #settings-panel {
+                width: calc(100vw - 20px);
+            }
+        }
     </style>
 </head>
-
 <body>
 
-    <!-- TOP BAR -->
     <div class="top-bar">
-
         <div class="brand">
             <h1>Biver</h1>
             <span>a shitty html parody</span>
         </div>
 
-        <button id="settings-btn" class="settings-btn">⚙</button>
-
+        <button id="settings-btn" class="settings-btn" type="button">⚙</button>
     </div>
 
-    <!-- CHAT -->
     <div id="chat-container"></div>
 
-    <!-- INPUT -->
     <form id="chat-form">
         <input type="text" id="message" placeholder="Write text or HTML..." required>
         <button type="submit">Send</button>
     </form>
 
-    <!-- SETTINGS PANEL -->
-    <div id="settings-panel">
+    <div id="settings-backdrop"></div>
 
+    <div id="settings-panel">
         <div class="tab-buttons">
-            <button data-tab="account">Account</button>
-            <button data-tab="themes">Themes</button>
+            <button type="button" class="settings-tab active" data-tab="account">Account</button>
+            <button type="button" class="settings-tab" data-tab="themes">Themes</button>
         </div>
 
         <div id="tab-account" class="tab-content">
+            <div id="current-user">Not logged in</div>
+
             <input type="email" id="email" placeholder="email">
             <input type="password" id="password" placeholder="password">
 
-            <button id="login-btn">Login</button>
-            <button id="signup-btn">Sign up</button>
-            <button id="logout-btn">Logout</button>
-
-            <div id="current-user"></div>
+            <div class="auth-buttons">
+                <button id="login-btn" type="button">Login</button>
+                <button id="signup-btn" type="button">Sign up</button>
+                <button id="logout-btn" type="button">Logout</button>
+            </div>
         </div>
 
         <div id="tab-themes" class="tab-content hidden">
-            <p>Themes WIP</p>
+            <div class="wip-note">Themes tab is WIP</div>
         </div>
-
     </div>
 
     <script src="ChatEngine.js"></script>
     <script src="script.js"></script>
-
 </body>
 </html>
