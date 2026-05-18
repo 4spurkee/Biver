@@ -1,80 +1,103 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-
-const SUPABASE_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw";
-
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
 const TABLE_NAME = 'messages';
 
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 window.ChatEngine = {
-
     containerId: 'chat-container',
-
     _renderedIds: new Set(),
     _userCache: {},
 
-    onNewMessage: function(msg) {},
-    onClearChat: function() {},
+    onNewMessage: function (msg) {
+        console.warn('onNewMessage not configured');
+    },
 
-    // -------------------------------
-    // LOAD ALL PROFILES ONCE
-    // -------------------------------
+    onClearChat: function () {
+        console.warn('onClearChat not configured');
+    },
+
     async _loadProfiles() {
-
-        const { data } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('profiles')
             .select('id, username');
 
-        if (!data) return;
+        if (error) {
+            console.error('Profile load error:', error);
+            return;
+        }
 
-        data.forEach(p => {
-            this._userCache[p.id] = p.username;
-        });
+        if (data) {
+            data.forEach((p) => {
+                this._userCache[p.id] = p.username;
+            });
+        }
     },
 
-    // -------------------------------
-    // PROCESS MESSAGE
-    // -------------------------------
+    async _resolveUsername(userId) {
+        if (!userId) return 'User';
+
+        if (this._userCache[userId]) {
+            return this._userCache[userId];
+        }
+
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('username')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Username lookup error:', error);
+        }
+
+        const username = data?.username || 'User';
+        this._userCache[userId] = username;
+        return username;
+    },
+
     async _processAndEmit(rawMsg) {
+        const idKey = String(rawMsg.id);
 
-        if (this._renderedIds.has(rawMsg.id)) return;
-        this._renderedIds.add(rawMsg.id);
+        if (this._renderedIds.has(idKey)) return;
+        this._renderedIds.add(idKey);
 
+        const username = await this._resolveUsername(rawMsg.user_id);
         const dateObj = new Date(rawMsg.created_at);
-
-        const username =
-            this._userCache[rawMsg.user_id] || 'User';
 
         const safeMessage = {
             id: rawMsg.id,
             username,
             text: DOMPurify.sanitize(rawMsg.content, {
-                ALLOWED_TAGS: [
-                    'b','i','u','strong','em','img','a','br','code'
-                ],
-                ALLOWED_ATTR: ['src','href','target','alt']
+                ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'img', 'a', 'br', 'code'],
+                ALLOWED_ATTR: ['src', 'href', 'target', 'alt']
             }),
-            date: dateObj.toLocaleDateString(),
-            time: dateObj.toLocaleTimeString()
+            date: dateObj.toLocaleDateString('uk-UA', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
+            }),
+            time: dateObj.toLocaleTimeString('uk-UA', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })
         };
 
         this.onNewMessage(safeMessage);
     },
 
-    // -------------------------------
-    // INIT SYSTEM
-    // -------------------------------
-    init: async function() {
-
+    init: async function () {
         await this._loadProfiles();
 
-        const { data } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from(TABLE_NAME)
             .select('*')
             .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Message load error:', error);
+        }
 
         if (data) {
             for (const msg of data) {
@@ -83,7 +106,7 @@ window.ChatEngine = {
         }
 
         supabaseClient
-            .channel('messages')
+            .channel('messages-live')
             .on(
                 'postgres_changes',
                 {
@@ -91,23 +114,22 @@ window.ChatEngine = {
                     schema: 'public',
                     table: TABLE_NAME
                 },
-                payload => {
+                (payload) => {
                     this._processAndEmit(payload.new);
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log('REALTIME STATUS:', status);
+            });
     },
 
-    // -------------------------------
-    // SEND MESSAGE
-    // -------------------------------
-    send: async function(content) {
-
-        const { data: { user } } =
-            await supabaseClient.auth.getUser();
+    send: async function (content) {
+        const {
+            data: { user }
+        } = await supabaseClient.auth.getUser();
 
         if (!user) {
-            alert("You must be logged in");
+            alert('You must be logged in');
             return;
         }
 
@@ -118,6 +140,8 @@ window.ChatEngine = {
                 content: content
             }]);
 
-        if (error) console.error(error);
+        if (error) {
+            console.error('Supabase error:', error);
+        }
     }
 };
