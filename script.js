@@ -1,123 +1,164 @@
-const chatContainer = document.getElementById('chat-container');
-const chatForm = document.getElementById('chat-form');
-const messageInput = document.getElementById('message');
+const start = () => {
+    const chatContainer = document.getElementById('chat-container');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message');
 
-const email = document.getElementById('email');
-const password = document.getElementById('password');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const currentUser = document.getElementById('current-user');
 
-const settingsBtn = document.getElementById('settings-btn');
-const settingsPanel = document.getElementById('settings-panel');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsBackdrop = document.getElementById('settings-backdrop');
+    const tabs = document.querySelectorAll('.settings-tab');
+    const tabAccount = document.getElementById('tab-account');
+    const tabThemes = document.getElementById('tab-themes');
 
-let isOpen = false;
-
-// TOGGLE SETTINGS
-settingsBtn.onclick = () => {
-    isOpen = !isOpen;
-    settingsPanel.style.display = isOpen ? 'flex' : 'none';
-};
-
-// TAB SYSTEM
-document.querySelectorAll('[data-tab]').forEach(btn => {
-    btn.onclick = () => {
-
-        document.querySelectorAll('.tab-content')
-            .forEach(t => t.classList.add('hidden'));
-
-        document.getElementById('tab-' + btn.dataset.tab)
-            .classList.remove('hidden');
+    const openSettings = () => {
+        settingsPanel.classList.add('open');
+        settingsBackdrop.classList.add('open');
     };
-});
 
-// AUTH
-document.getElementById('login-btn').onclick = async () => {
+    const closeSettings = () => {
+        settingsPanel.classList.remove('open');
+        settingsBackdrop.classList.remove('open');
+    };
 
-    const { error } = await supabaseClient.auth.signInWithPassword({
-        email: email.value,
-        password: password.value
+    settingsBtn.addEventListener('click', () => {
+        const isOpen = settingsPanel.classList.contains('open');
+        if (isOpen) {
+            closeSettings();
+        } else {
+            openSettings();
+        }
     });
 
-    if (error) alert(error.message);
-    else location.reload();
-};
+    settingsBackdrop.addEventListener('click', closeSettings);
 
-document.getElementById('signup-btn').onclick = async () => {
-
-    const username = prompt("username");
-    if (!username) return;
-
-    const { data, error } = await supabaseClient.auth.signUp({
-        email: email.value,
-        password: password.value
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSettings();
     });
 
-    if (error) return alert(error.message);
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            tabs.forEach((t) => t.classList.remove('active'));
+            tab.classList.add('active');
 
-    await supabaseClient.from('profiles').insert([{
-        id: data.user.id,
-        username
-    }]);
+            tabAccount.classList.add('hidden');
+            tabThemes.classList.add('hidden');
 
-    alert("Account created");
-};
+            const target = document.getElementById(`tab-${tab.dataset.tab}`);
+            if (target) target.classList.remove('hidden');
+        });
+    });
 
-document.getElementById('logout-btn').onclick = async () => {
-    await supabaseClient.auth.signOut();
-    location.reload();
-};
+    async function updateCurrentUser() {
+        const { data: { user } } = await supabaseClient.auth.getUser();
 
-// USER DISPLAY
-async function loadUser() {
+        if (!user) {
+            currentUser.innerText = 'Not logged in';
+            return;
+        }
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .maybeSingle();
 
-    const box = document.getElementById('current-user');
+        if (error) {
+            console.error('Current user load error:', error);
+        }
 
-    if (!user) {
-        box.innerText = "Not logged in";
-        return;
+        currentUser.innerText = profile?.username || 'User';
     }
 
-    const { data } = await supabaseClient
-        .from('profiles')
-        .select('username')
-        .eq('id', user.id)
-        .single();
+    document.getElementById('login-btn').onclick = async () => {
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email: email.value,
+            password: password.value
+        });
 
-    box.innerText = "Logged in as: " + (data?.username || "User");
-}
+        if (error) {
+            alert(error.message);
+            return;
+        }
 
-loadUser();
+        await updateCurrentUser();
+        closeSettings();
+    };
 
-// CHAT
-ChatEngine.onClearChat = function () {
-    chatContainer.innerHTML = '';
-};
+    document.getElementById('signup-btn').onclick = async () => {
+        const username = prompt('username');
+        if (!username) return;
 
-ChatEngine.onNewMessage = function (msg) {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email: email.value,
+            password: password.value
+        });
 
-    const div = document.createElement('div');
-    div.className = 'message';
+        if (error) {
+            alert(error.message);
+            return;
+        }
 
-    div.innerHTML = `
-        [<small>${msg.date} ${msg.time}</small>]
-        <b>${msg.username}:</b>
-        <span>${msg.text}</span>
-    `;
+        if (data?.user) {
+            const { error: profileError } = await supabaseClient
+                .from('profiles')
+                .insert([{
+                    id: data.user.id,
+                    username
+                }]);
 
-    chatContainer.appendChild(div);
-    window.scrollTo(0, document.body.scrollHeight);
-};
+            if (profileError) {
+                console.error('Profile insert error:', profileError);
+            }
+        }
 
-chatForm.onsubmit = async (e) => {
-    e.preventDefault();
+        alert('Account created');
+        await updateCurrentUser();
+    };
 
-    const text = messageInput.value.trim();
-    if (!text) return;
+    document.getElementById('logout-btn').onclick = async () => {
+        await supabaseClient.auth.signOut();
+        await updateCurrentUser();
+        closeSettings();
+    };
 
-    await ChatEngine.send(text);
-    messageInput.value = '';
-};
+    ChatEngine.onClearChat = function () {
+        chatContainer.innerHTML = '';
+    };
 
-window.addEventListener("DOMContentLoaded", () => {
+    ChatEngine.onNewMessage = function (msg) {
+        const div = document.createElement('div');
+        div.className = 'message';
+
+        div.innerHTML = `
+            [<small>${msg.date} ${msg.time}</small>]
+            <b>${msg.username}:</b>
+            <span>${msg.text}</span>
+        `;
+
+        chatContainer.appendChild(div);
+        window.scrollTo(0, document.body.scrollHeight);
+    };
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        await ChatEngine.send(text);
+        messageInput.value = '';
+    });
+
+    updateCurrentUser();
     ChatEngine.init();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+} else {
+    start();
+}
