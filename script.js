@@ -8,20 +8,23 @@ const password = document.getElementById('password');
 const settingsBtn = document.getElementById('settings-btn');
 const settingsPanel = document.getElementById('settings-panel');
 
+let isOpen = false;
+
+// TOGGLE SETTINGS
 settingsBtn.onclick = () => {
-    settingsPanel.style.display =
-        settingsPanel.style.display === 'flex'
-            ? 'none'
-            : 'flex';
+    isOpen = !isOpen;
+    settingsPanel.style.display = isOpen ? 'flex' : 'none';
 };
 
-// TABS
+// TAB SYSTEM
 document.querySelectorAll('[data-tab]').forEach(btn => {
     btn.onclick = () => {
 
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-content')
+            .forEach(t => t.classList.add('hidden'));
 
-        document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+        document.getElementById('tab-' + btn.dataset.tab)
+            .classList.remove('hidden');
     };
 });
 
