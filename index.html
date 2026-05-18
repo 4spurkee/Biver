@@ -1,202 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biver</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biver</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-body {
-    font-family: 'Trebuchet MS';
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    transition: background 0.3s ease;
-}
+        body {
+            background: linear-gradient(135deg, #3b4a1f, #1f2a12);
+            color: #f3e7b3;
+            font-family: 'Trebuchet MS';
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-/* ===== THEMES ===== */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
 
-body[data-theme="green"] {
-    background: linear-gradient(135deg, #3b4a1f, #1f2a12);
-    color: #f3e7b3;
-}
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
 
-body[data-theme="space"] {
-    background: radial-gradient(circle at top, #1b1f3a, #0a0d1a, #000);
-    color: #d7e1ff;
-}
+            padding: 18px 25px;
 
-body[data-theme="goose"] {
-    background: url("Goose.png") center/cover no-repeat fixed;
-    color: #3a2f10;
-}
+            background: rgba(25, 35, 12, 0.9);
+            backdrop-filter: blur(10px);
 
-body[data-theme="goose"]::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: rgba(255,255,255,0.75);
-    pointer-events: none;
-}
+            border-bottom: 1px solid #d6b65a;
+        }
 
-/* ===== TOP BAR ===== */
+        .brand {
+            display: flex;
+            flex-direction: column;
+        }
 
-.top-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
+        .brand h1 {
+            font-size: 34px;
+            background: linear-gradient(90deg, #ffde84, #f9dd8a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+        .brand span {
+            font-size: 13px;
+            color: #ffe9a3;
+            opacity: 0.8;
+        }
 
-    padding: 18px 25px;
-    background: rgba(25, 35, 12, 0.9);
-    backdrop-filter: blur(10px);
-}
+        .settings-btn {
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            border-radius: 10px;
+            border: 2px solid #d6b65a;
 
-.brand {
-    display: flex;
-    flex-direction: column;
-}
+            background: linear-gradient(135deg, #3a4620, #1f2a12);
+            color: #ffe9a3;
 
-.brand h1 {
-    font-size: 34px;
-    color: #ffe9a3;
-}
+            cursor: pointer;
 
-.brand span {
-    font-size: 13px;
-    opacity: 0.8;
-}
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-/* ===== CHAT ===== */
+            font-size: 18px;
 
-#chat-container {
-    margin-top: 110px;
-    margin-bottom: 80px;
-    flex: 1;
-    padding: 25px;
+            transition: 0.2s ease;
+        }
 
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
+        .settings-btn:hover {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
+            transform: scale(1.05);
+        }
 
-.message {
-    background: rgba(0,0,0,0.2);
-    border: 1px solid #d6b65a;
-    padding: 12px;
-    border-radius: 12px;
-    max-width: 80%;
-}
+        #chat-container {
+            margin-top: 110px;
+            margin-bottom: 80px;
 
-/* ===== INPUT ===== */
+            flex: 1;
+            padding: 25px;
 
-#chat-form {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
+            overflow-y: auto;
 
-    display: flex;
-    gap: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
 
-    padding: 15px;
-    background: rgba(25, 35, 12, 0.95);
-}
+        .message {
+            background: linear-gradient(135deg, #2f3a17, #1c250f);
 
-#message {
-    flex: 1;
-    padding: 10px;
-    border-radius: 10px;
-}
+            border: 1px solid #d6b65a;
+            border-radius: 14px;
 
-/* ===== SETTINGS ===== */
+            padding: 14px 18px;
 
-.settings {
-    display: flex;
-    gap: 8px;
-}
+            max-width: 80%;
+            width: fit-content;
 
-button {
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-</style>
+            color: #ffe9a3;
+            line-height: 1.5;
+        }
+
+        #chat-form {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+
+            display: flex;
+            gap: 10px;
+
+            padding: 15px;
+
+            background: rgba(25, 35, 12, 0.95);
+            backdrop-filter: blur(10px);
+
+            border-top: 1px solid #d6b65a;
+        }
+
+        #message {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 2px solid #d6b65a;
+            background: #1f2a12;
+            color: #ffe9a3;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 2px solid #d6b65a;
+
+            background: linear-gradient(135deg, #3a4620, #1f2a12);
+            color: #ffe9a3;
+
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
+        }
+
+        .history-info {
+            margin: 0 25px 14px;
+            padding: 12px 16px;
+
+            border-radius: 12px;
+            border: 2px solid #d6b65a;
+
+            background: linear-gradient(135deg, #3a4620, #1f2a12);
+            color: #ffe9a3;
+
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        .history-info:hover {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
+        }
+
+        #settings-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s ease;
+            z-index: 99998;
+        }
+
+        #settings-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #settings-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+
+            width: 360px;
+            max-width: calc(100vw - 20px);
+            max-height: 80vh;
+
+            background: rgba(25, 35, 12, 0.98);
+            border: 2px solid #d6b65a;
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+
+            padding: 12px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            transform: translate(-50%, -52%) scale(0.96);
+            opacity: 0;
+            pointer-events: none;
+            overflow: auto;
+            z-index: 99999;
+
+            transition: 0.25s ease;
+        }
+
+        #settings-panel.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tab-buttons button {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 12px;
+        }
+
+        .tab-buttons button.active {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
+        }
+
+        .tab-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #current-user {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d6b65a;
+            background: #1f2a12;
+            color: #ffe9a3;
+            text-align: center;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .auth-buttons button {
+            flex: 1;
+        }
+
+        #settings-panel input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 2px solid #d6b65a;
+            background: #1f2a12;
+            color: #ffe9a3;
+            outline: none;
+        }
+
+        .wip-note {
+            padding: 14px;
+            border: 1px dashed #d6b65a;
+            border-radius: 10px;
+            text-align: center;
+            color: #ffe9a3;
+        }
+
+        @media (max-width: 700px) {
+            #chat-container {
+                margin-top: 110px;
+            }
+
+            #settings-panel {
+                width: calc(100vw - 20px);
+            }
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="top-bar">
-    <div class="brand">
-        <h1>Biver</h1>
-        <span>a shitty html parody</span>
+    <div class="top-bar">
+        <div class="brand">
+            <h1>Biver</h1>
+            <span>a shitty html parody</span>
+        </div>
+
+        <button id="settings-btn" class="settings-btn" type="button">⚙</button>
     </div>
 
-    <div class="settings">
-        <button onclick="setTheme('green')">🟢</button>
-        <button onclick="setTheme('space')">🌌</button>
-        <button onclick="setTheme('goose')">🪿</button>
+    <div id="chat-container"></div>
+
+    <form id="chat-form">
+        <input type="text" id="message" placeholder="Write text or HTML..." required>
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="settings-backdrop"></div>
+
+    <div id="settings-panel">
+        <div class="tab-buttons">
+            <button type="button" class="settings-tab active" data-tab="account">Account</button>
+            <button type="button" class="settings-tab" data-tab="themes">Themes</button>
+        </div>
+
+        <div id="tab-account" class="tab-content">
+            <div id="current-user">Not logged in</div>
+
+            <input type="email" id="email" placeholder="email">
+            <input type="password" id="password" placeholder="password">
+
+            <div class="auth-buttons">
+                <button id="login-btn" type="button">Login</button>
+                <button id="signup-btn" type="button">Sign up</button>
+                <button id="logout-btn" type="button">Logout</button>
+            </div>
+        </div>
+
+        <div id="tab-themes" class="tab-content hidden">
+            <div class="wip-note">Themes tab is WIP</div>
+        </div>
     </div>
-</div>
 
-<div id="chat-container"></div>
-
-<form id="chat-form">
-    <input id="message" placeholder="Write message..." required>
-    <button>Send</button>
-</form>
-
-<script src="ChatEngine.js"></script>
-
-<script>
-const chatContainer = document.getElementById('chat-container');
-const chatForm = document.getElementById('chat-form');
-const messageInput = document.getElementById('message');
-
-/* MESSAGE RENDER */
-ChatEngine.onNewMessage = function(msg) {
-    const div = document.createElement('div');
-    div.className = 'message';
-    div.innerHTML = `[${msg.date} ${msg.time}] <b>${msg.username}</b>: ${msg.text}`;
-    chatContainer.appendChild(div);
-};
-
-/* SEND */
-chatForm.onsubmit = async (e) => {
-    e.preventDefault();
-    await ChatEngine.send(messageInput.value);
-    messageInput.value = '';
-};
-
-/* THEME */
-window.setTheme = async function(theme) {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    await supabaseClient
-        .from('profiles')
-        .update({ theme })
-        .eq('id', user.id);
-
-    ChatEngine.applyTheme(theme);
-};
-
-/* START */
-ChatEngine.init();
-</script>
-
+    <script src="ChatEngine.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
