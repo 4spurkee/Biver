@@ -5,6 +5,31 @@ const messageInput = document.getElementById('message');
 const email = document.getElementById('email');
 const password = document.getElementById('password');
 
+const currentUser =
+    document.getElementById('current-user');
+
+async function updateCurrentUser() {
+
+    const {
+        data: { user }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+        currentUser.innerText = 'Not logged in';
+        return;
+    }
+
+    const { data: profile } =
+        await supabaseClient
+            .from('profiles')
+            .select('username')
+            .eq('id', user.id)
+            .single();
+
+    currentUser.innerText =
+        profile?.username || 'User';
+}
+
 document.getElementById('login-btn').onclick = async () => {
 
     const { error } = await supabaseClient.auth.signInWithPassword({
@@ -39,17 +64,21 @@ document.getElementById('signup-btn').onclick = async () => {
 };
 
 document.getElementById('logout-btn').onclick = async () => {
+
     await supabaseClient.auth.signOut();
+
     location.reload();
 };
 
 ChatEngine.onClearChat = function() {
+
     chatContainer.innerHTML = '';
 };
 
 ChatEngine.onNewMessage = function(msg) {
 
     const div = document.createElement('div');
+
     div.className = 'message';
 
     div.innerHTML = `
@@ -59,19 +88,29 @@ ChatEngine.onNewMessage = function(msg) {
     `;
 
     chatContainer.appendChild(div);
-    window.scrollTo(0, document.body.scrollHeight);
+
+    window.scrollTo(
+        0,
+        document.body.scrollHeight
+    );
 };
 
 chatForm.onsubmit = async (e) => {
+
     e.preventDefault();
 
     const text = messageInput.value.trim();
+
     if (!text) return;
 
     await ChatEngine.send(text);
+
     messageInput.value = '';
 };
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+
+    await updateCurrentUser();
+
     ChatEngine.init();
 });
