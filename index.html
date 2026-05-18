@@ -62,6 +62,33 @@
             opacity: 0.8;
         }
 
+        /* SETTINGS BUTTON */
+        .settings-btn {
+            width: 42px;
+            height: 42px;
+
+            border-radius: 10px;
+            border: 2px solid #d6b65a;
+
+            background: linear-gradient(135deg, #3a4620, #1f2a12);
+            color: #ffe9a3;
+
+            cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 18px;
+
+            transition: 0.2s ease;
+        }
+
+        .settings-btn:hover {
+            background: linear-gradient(135deg, #4a5a2a, #2a3315);
+            transform: scale(1.05);
+        }
+
         #chat-container {
             margin-top: 110px;
             margin-bottom: 80px;
@@ -118,33 +145,24 @@
             background: linear-gradient(135deg, #4a5a2a, #2a3315);
         }
 
-        /* SETTINGS */
-        #settings-btn {
-            position: fixed;
-            right: 15px;
-            bottom: 80px;
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
-            border: 2px solid #d6b65a;
-            background: linear-gradient(135deg, #3a4620, #1f2a12);
-            color: #ffe9a3;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
+        /* SETTINGS PANEL */
         #settings-panel {
             position: fixed;
             right: 15px;
-            bottom: 140px;
+            top: 80px;
+
             width: 260px;
+
             background: rgba(25, 35, 12, 0.95);
             border: 2px solid #d6b65a;
             border-radius: 12px;
+
             padding: 10px;
+
             display: none;
             flex-direction: column;
             gap: 10px;
+
             z-index: 2000;
         }
 
@@ -167,17 +185,22 @@
         .hidden {
             display: none;
         }
+
     </style>
 </head>
 
 <body>
 
-    <!-- TOP -->
+    <!-- TOP BAR -->
     <div class="top-bar">
+
         <div class="brand">
             <h1>Biver</h1>
             <span>a shitty html parody</span>
         </div>
+
+        <button id="settings-btn" class="settings-btn">⚙</button>
+
     </div>
 
     <!-- CHAT -->
@@ -188,9 +211,6 @@
         <input type="text" id="message" placeholder="Write text or HTML..." required>
         <button type="submit">Send</button>
     </form>
-
-    <!-- SETTINGS BUTTON -->
-    <button id="settings-btn">⚙</button>
 
     <!-- SETTINGS PANEL -->
     <div id="settings-panel">
