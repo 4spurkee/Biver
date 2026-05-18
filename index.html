@@ -146,24 +146,26 @@
         }
 
         /* SETTINGS PANEL */
-        #settings-panel {
-            position: fixed;
-            right: 15px;
-            top: 80px;
+        .settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
 
-            width: 260px;
+    width: 300px;
+    height: 100vh;
 
-            background: rgba(25, 35, 12, 0.95);
-            border: 2px solid #d6b65a;
-            border-radius: 12px;
+    background: #1f2a12;
+    border-left: 2px solid #d6b65a;
 
-            padding: 10px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
 
-            display: none;
-            flex-direction: column;
-            gap: 10px;
+    z-index: 9999;
+}
 
-            z-index: 2000;
+.settings-panel.open {
+    transform: translateX(0);
+}0;
         }
 
         .tab-buttons {
