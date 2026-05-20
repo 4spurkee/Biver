@@ -1,11 +1,11 @@
 const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
 
 const TABLE_NAME = 'messages';
 
 const supabaseClient = supabase.createClient(
     SUPABASE_URL,
-    SUPABASE_KEY
+    SUPABASE_ANON_KEY
 );
 
 window.ChatEngine = {
@@ -13,17 +13,13 @@ window.ChatEngine = {
     containerId: 'chat-container',
 
     _renderedIds: new Set(),
-    _userCache: {},
 
     onNewMessage: () => {},
     onClearChat: () => {},
 
     async _getUsername(userId) {
-        if (!userId) return 'User';
 
-        if (this._userCache[userId]) {
-            return this._userCache[userId];
-        }
+        if (!userId) return 'User';
 
         const { data } = await supabaseClient
             .from('profiles')
@@ -31,25 +27,24 @@ window.ChatEngine = {
             .eq('id', userId)
             .maybeSingle();
 
-        const name = data?.username || 'User';
-        this._userCache[userId] = name;
-
-        return name;
+        return data?.username || 'User';
     },
 
-    async _process(rawMsg) {
+    async _process(msg) {
 
-        if (this._renderedIds.has(rawMsg.id)) return;
-        this._renderedIds.add(rawMsg.id);
+        const id = String(msg.id);
 
-        const username = await this._getUsername(rawMsg.user_id);
+        if (this._renderedIds.has(id)) return;
+        this._renderedIds.add(id);
 
-        const d = new Date(rawMsg.created_at);
+        const username = await this._getUsername(msg.user_id);
+
+        const d = new Date(msg.created_at);
 
         this.onNewMessage({
-            id: rawMsg.id,
+            id,
             username,
-            text: DOMPurify.sanitize(rawMsg.content),
+            text: DOMPurify.sanitize(msg.content),
             date: d.toLocaleDateString('uk-UA'),
             time: d.toLocaleTimeString('uk-UA')
         });
@@ -64,7 +59,11 @@ window.ChatEngine = {
 
         if (error) console.error(error);
 
-        data?.forEach(m => this._process(m));
+        if (data) {
+            for (const msg of data) {
+                await this._process(msg);
+            }
+        }
 
         supabaseClient
             .channel('messages')
@@ -85,11 +84,13 @@ window.ChatEngine = {
 
         if (!user) return alert('Login required');
 
-        await supabaseClient
+        const { error } = await supabaseClient
             .from(TABLE_NAME)
             .insert([{
                 user_id: user.id,
                 content
             }]);
+
+        if (error) console.error(error);
     }
 };
