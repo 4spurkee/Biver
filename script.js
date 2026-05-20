@@ -10,9 +10,12 @@ const start = () => {
     const settingsBtn = document.getElementById('settings-btn');
     const settingsPanel = document.getElementById('settings-panel');
     const settingsBackdrop = document.getElementById('settings-backdrop');
+
     const tabs = document.querySelectorAll('.settings-tab');
     const tabAccount = document.getElementById('tab-account');
     const tabThemes = document.getElementById('tab-themes');
+
+    const themeButtons = document.querySelectorAll('.theme-btn');
 
     const openSettings = () => {
         settingsPanel.classList.add('open');
@@ -22,6 +25,58 @@ const start = () => {
     const closeSettings = () => {
         settingsPanel.classList.remove('open');
         settingsBackdrop.classList.remove('open');
+    };
+
+    const applyTheme = (theme) => {
+        document.body.classList.remove('theme-bloodbath', 'theme-goose');
+
+        if (theme === 'bloodbath') {
+            document.body.classList.add('theme-bloodbath');
+        } else if (theme === 'goose') {
+            document.body.classList.add('theme-goose');
+        }
+    };
+
+    const loadTheme = async () => {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        if (!user) {
+            applyTheme('default');
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('theme')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Theme load error:', error);
+        }
+
+        applyTheme(data?.theme || 'default');
+    };
+
+    const saveTheme = async (theme) => {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        if (!user) {
+            alert('You must be logged in');
+            return;
+        }
+
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ theme })
+            .eq('id', user.id);
+
+        if (error) {
+            console.error('Theme save error:', error);
+            return;
+        }
+
+        applyTheme(theme);
     };
 
     settingsBtn.addEventListener('click', () => {
@@ -49,6 +104,12 @@ const start = () => {
 
             const target = document.getElementById(`tab-${tab.dataset.tab}`);
             if (target) target.classList.remove('hidden');
+        });
+    });
+
+    themeButtons.forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            await saveTheme(btn.dataset.theme);
         });
     });
 
@@ -85,6 +146,7 @@ const start = () => {
         }
 
         await updateCurrentUser();
+        await loadTheme();
         closeSettings();
     };
 
@@ -107,7 +169,8 @@ const start = () => {
                 .from('profiles')
                 .insert([{
                     id: data.user.id,
-                    username
+                    username,
+                    theme: 'default'
                 }]);
 
             if (profileError) {
@@ -117,11 +180,13 @@ const start = () => {
 
         alert('Account created');
         await updateCurrentUser();
+        await loadTheme();
     };
 
     document.getElementById('logout-btn').onclick = async () => {
         await supabaseClient.auth.signOut();
         await updateCurrentUser();
+        await loadTheme();
         closeSettings();
     };
 
@@ -154,6 +219,7 @@ const start = () => {
     });
 
     updateCurrentUser();
+    loadTheme();
     ChatEngine.init();
 };
 
