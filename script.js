@@ -37,11 +37,12 @@ const start = () => {
     };
 
     settingsBackdrop.onclick = closeSettings;
+
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeSettings();
     });
 
-    // ---------------- TABS FIX ----------------
+    // ---------------- TABS ----------------
 
     tabs.forEach(tab => {
         tab.onclick = () => {
@@ -60,29 +61,64 @@ const start = () => {
         };
     });
 
-    // ---------------- THEME ----------------
+    // ---------------- THEMES ----------------
 
     const applyTheme = (theme) => {
         document.body.classList.remove('theme-bloodbath', 'theme-goose');
 
-        if (theme === 'bloodbath') {
+        if (theme === 'bloodbath')
             document.body.classList.add('theme-bloodbath');
-        }
 
-        if (theme === 'goose') {
+        if (theme === 'goose')
             document.body.classList.add('theme-goose');
-        }
 
         localStorage.setItem('theme', theme);
     };
 
+    const saveTheme = async (theme) => {
+
+        const { data: { user } } =
+            await supabaseClient.auth.getUser();
+
+        if (!user) return;
+
+        const { error } = await supabaseClient
+            .from('profiles')
+            .update({ theme })
+            .eq('id', user.id);
+
+        if (error) console.error(error);
+
+        applyTheme(theme);
+    };
+
+    const loadTheme = async () => {
+
+        const { data: { user } } =
+            await supabaseClient.auth.getUser();
+
+        if (!user) {
+            applyTheme('default');
+            return;
+        }
+
+        const { data } = await supabaseClient
+            .from('profiles')
+            .select('theme')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        applyTheme(data?.theme || 'default');
+    };
+
     themeButtons.forEach(btn => {
-        btn.onclick = () => applyTheme(btn.dataset.theme);
+        btn.onclick = () => saveTheme(btn.dataset.theme);
     });
 
-    // ---------------- AUTH ----------------
+    // ---------------- USER ----------------
 
     async function updateUser() {
+
         const { data: { user } } =
             await supabaseClient.auth.getUser();
 
@@ -111,6 +147,7 @@ const start = () => {
         if (error) return alert(error.message);
 
         await updateUser();
+        await loadTheme();
         closeSettings();
     };
 
@@ -127,22 +164,28 @@ const start = () => {
 
         if (error) return alert(error.message);
 
-        await supabaseClient
-            .from('profiles')
-            .insert([{
-                id: data.user.id,
-                username
-            }]);
+        if (data?.user) {
+            await supabaseClient
+                .from('profiles')
+                .insert([{
+                    id: data.user.id,
+                    username,
+                    theme: 'default'
+                }]);
+        }
 
         await updateUser();
+        await loadTheme();
     };
 
     document.getElementById('logout-btn').onclick = async () => {
         await supabaseClient.auth.signOut();
         await updateUser();
+        await loadTheme();
+        closeSettings();
     };
 
-    // ---------------- CHAT ----------------
+    // ---------------- CHAT UI ----------------
 
     ChatEngine.onClearChat = () => {
         chatContainer.innerHTML = '';
@@ -176,8 +219,7 @@ const start = () => {
     // ---------------- INIT ----------------
 
     updateUser();
-    applyTheme(localStorage.getItem('theme') || 'default');
-
+    loadTheme();
     ChatEngine.init();
 };
 
