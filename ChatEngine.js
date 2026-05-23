@@ -1,10 +1,3 @@
-// const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-// const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
-// const TABLE_NAME = 'messages';
-
-// const SUPABASE_URL = 'https://qgutondkgsudmncntxkx.supabase.co';
-// const SUPABASE_KEY = 'sb_publishable_02eWwlp4XSHg4mnPpZ_FOA_VL0wXPIZ';
-// const TABLE_NAME   = 'messages'
 
 // TODO обмін ключами по посиланню і збереження їх в локалі
 const CONST_names= ['SUPABASE_URL', 'SUPABASE_KEY', 'TABLE_NAME'];
@@ -18,6 +11,13 @@ CONST_names.map((name)=>{
 const SUPABASE_URL = localStorage.getItem('SUPABASE_URL')
 const SUPABASE_KEY = localStorage.getItem('SUPABASE_KEY')
 const TABLE_NAME   = localStorage.getItem('TABLE_NAME')
+
+if(SUPABASE_URL=null || SUPABASE_KEY=null || TABLE_NAME = null){
+ window.location.href = window.location.origin +
+     '?SUPABASE_URL=https://gkfifjfxwtlkoevhalzu.supabase.co'+
+     '&SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw'+
+     '&TABLE_NAME=messages';
+}
 
 console.log(CONST_names.map((name)=>localStorage.getItem(name)));
 
