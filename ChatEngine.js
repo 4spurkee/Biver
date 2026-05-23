@@ -21,12 +21,6 @@ if(SUPABASE_URL=null || SUPABASE_KEY=null || TABLE_NAME = null){
 
 console.log(CONST_names.map((name)=>localStorage.getItem(name)));
 
-
-
-// const SUPABASE_URL = 'https://gjnbnmcffxwnocrhyrqc.supabase.co';
-// const SUPABASE_KEY = 'sb_publishable_9C8hiEZQkyj4cM1Xv7mezA_i4R74d2s';
-// const TABLE_NAME = 'messagesBodia'
-
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 window.ChatEngine = {
