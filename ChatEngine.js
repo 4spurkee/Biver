@@ -8,12 +8,12 @@ CONST_names.map((name)=>{
     if(params.get(name)!=null) localStorage.setItem(name, params.get(name))
 })
 
-const SUPABASE_URL = localStorage.getItem('SUPABASE_URL')
-const SUPABASE_KEY = localStorage.getItem('SUPABASE_KEY')
-const TABLE_NAME   = localStorage.getItem('TABLE_NAME')
+const SUPABASE_URL = localStorage.getItem('SUPABASE_URL');
+const SUPABASE_KEY = localStorage.getItem('SUPABASE_KEY');
+const TABLE_NAME   = localStorage.getItem('TABLE_NAME');
 
 if(SUPABASE_URL==null || SUPABASE_KEY==null || TABLE_NAME==null){
- window.location.href = window.location.origin +
+ window.location.href = window.location.origin +'/Biver' +
      '?SUPABASE_URL=https://gkfifjfxwtlkoevhalzu.supabase.co'+
      '&SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw'+
      '&TABLE_NAME=messages';
