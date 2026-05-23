@@ -1,6 +1,31 @@
-const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
-const TABLE_NAME = 'messages';
+// const SUPABASE_URL = 'https://gkfifjfxwtlkoevhalzu.supabase.co';
+// const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZmlmamZ4d3Rsa29ldmhhbHp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MjgzNTksImV4cCI6MjA5NDUwNDM1OX0.H3iB6muN-Pa75nmFWusXSK_gfT5P0aunNQGHRoYwONw';
+// const TABLE_NAME = 'messages';
+
+// const SUPABASE_URL = 'https://qgutondkgsudmncntxkx.supabase.co';
+// const SUPABASE_KEY = 'sb_publishable_02eWwlp4XSHg4mnPpZ_FOA_VL0wXPIZ';
+// const TABLE_NAME   = 'messages'
+
+// TODO обмін ключами по посиланню і збереження їх в локалі
+const CONST_names= ['SUPABASE_URL', 'SUPABASE_KEY', 'TABLE_NAME'];
+
+const params = new URLSearchParams(window.location.search);
+
+CONST_names.map((name)=>{
+    if(params.get(name)!=null) localStorage.setItem(name, params.get(name))
+})
+
+const SUPABASE_URL = localStorage.getItem('SUPABASE_URL')
+const SUPABASE_KEY = localStorage.getItem('SUPABASE_KEY')
+const TABLE_NAME   = localStorage.getItem('TABLE_NAME')
+
+console.log(CONST_names.map((name)=>localStorage.getItem(name)));
+
+
+
+// const SUPABASE_URL = 'https://gjnbnmcffxwnocrhyrqc.supabase.co';
+// const SUPABASE_KEY = 'sb_publishable_9C8hiEZQkyj4cM1Xv7mezA_i4R74d2s';
+// const TABLE_NAME = 'messagesBodia'
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
