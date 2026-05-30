@@ -116,6 +116,28 @@ const start = () => {
         });
     });
 
+    imageBtn.addEventListener('click', () => {
+
+    const fileInput = document.createElement('input');
+
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+
+    fileInput.onchange = async () => {
+
+        const file = fileInput.files[0];
+
+        if (!file) return;
+
+        alert(
+            `Selected image: ${file.name}\n\n` +
+            `Upload system not added yet.`
+        );
+    };
+
+    fileInput.click();
+});
+
     async function updateCurrentUser() {
         const { data: { user } } = await supabaseClient.auth.getUser();
 
