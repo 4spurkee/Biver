@@ -2,6 +2,7 @@ const start = () => {
     const chatContainer = document.getElementById('chat-container');
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message');
+    const imageBtn = document.getElementById('image-btn');
 
     const email = document.getElementById('email');
     const password = document.getElementById('password');
